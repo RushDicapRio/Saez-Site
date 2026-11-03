@@ -152,23 +152,55 @@ const PROJECTS_DATA = {
     ]
   }
 };
-const DEFAULT_DISCORD_URL = 'https://discord.gg/4djy4pesKd';
-const DISCORD_STORAGE_KEY = 'saez_community_discord_link_v1';
+const OFFICIAL_DISCORD_URL = 'https://discord.gg/4djy4pesKd';
+const DISCORD_STORAGE_KEY = 'saez_community_discord_link_v2';
+try {
+  localStorage.removeItem('saez_community_discord_link_v1');
+  const storedOld = localStorage.getItem(DISCORD_STORAGE_KEY);
+  if (!storedOld || storedOld.includes('votre-lien-discord')) {
+    localStorage.setItem(DISCORD_STORAGE_KEY, OFFICIAL_DISCORD_URL);
+  }
+} catch (e) {}
 function getStoredDiscordUrl() {
-  return localStorage.getItem(DISCORD_STORAGE_KEY) || DEFAULT_DISCORD_URL;
+  try {
+    const stored = localStorage.getItem(DISCORD_STORAGE_KEY);
+    if (stored && !stored.includes('votre-lien-discord')) {
+      return stored;
+    }
+  } catch (e) {}
+  return OFFICIAL_DISCORD_URL;
 }
 function updateDiscordLinks(newUrl) {
-  const url = (newUrl || '').trim() || DEFAULT_DISCORD_URL;
-  localStorage.setItem(DISCORD_STORAGE_KEY, url);
+  let url = (newUrl || '').trim() || OFFICIAL_DISCORD_URL;
+  if (url.includes('votre-lien-discord')) {
+    url = OFFICIAL_DISCORD_URL;
+  }
+  try {
+    localStorage.removeItem('saez_community_discord_link_v1');
+    localStorage.setItem(DISCORD_STORAGE_KEY, url);
+  } catch (e) {}
   const discordButtons = document.querySelectorAll('a[href*="discord"], .btn-discord');
   discordButtons.forEach((btn) => {
     btn.setAttribute('href', url);
+    btn.setAttribute('target', '_blank');
+    btn.setAttribute('rel', 'noopener noreferrer');
   });
   const displayEl = document.getElementById('current-discord-url');
   if (displayEl) {
     displayEl.textContent = url;
   }
 }
+document.addEventListener('click', (e) => {
+  const target = e.target.closest && e.target.closest('a[href*="discord"], .btn-discord');
+  if (target) {
+    const currentHref = target.getAttribute('href') || '';
+    if (currentHref.includes('votre-lien-discord') || !currentHref.startsWith('http')) {
+      target.setAttribute('href', OFFICIAL_DISCORD_URL);
+      target.setAttribute('target', '_blank');
+      target.setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+}, true);
 const modalBackdrop = document.getElementById('project-modal');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 function openProjectModal(projectId) {
